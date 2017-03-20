@@ -1,0 +1,18 @@
+{
+    "name": "carawebs/wp-metadata-accessor",
+    "description": "This package helps fetch data from the WordPress postmeta table.",
+    "type": "library",
+    "license": "GNU",
+    "authors": [
+        {
+            "name": "David Egan",
+            "email": "david@carawebs.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Carawebs\\DataAccessor\\": ""
+        }
+    },
+    "require": {}
+}
