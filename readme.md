@@ -47,10 +47,12 @@ Second repeater subfield: $second_sibfield => $repeater . '_' . $index . '_' . $
 To use:
 
 ~~~php
+$postMeta = new Carawebs\DataAccessor\PostMetaData;
+
 $carouselSubfields = [
     'image' => ['image_ID', 'full'], // denotes an image ID subfield, image size to return
     'description' => 'text' // subfield name, filter to apply
 ];
 
-$carouselData = $this->postMeta->getRepeaterField('slider', $carouselSubfields);
+$carouselData = $postMeta->getRepeaterField('slider', $carouselSubfields);
 ~~~
