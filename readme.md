@@ -35,7 +35,20 @@ $extra_content = $postMeta->getContentField('extra_content');
 ~~~
 
 ## Filters
-The `PostMetaData::getField()` method accepts an optional string parameter. This is used to determine the filter method that should be applied to the returned data.
+The `PostMetaData::getField()` method accepts an optional string as a second  parameter. This is used to determine the filter or method that should be applied to the returned data.
+
+|Parameter|Filter or Method Used on `$content`|
+|-|-|
+|"OEmbed"| None |
+|"esc_html"| `esc_html($content)`|
+|"esc_url"| `esc_url( $content )`|
+|"the_content"| `apply_filters( 'the_content', $content )`|
+|"text"|`esc_html( $content )`|
+|"date"| `date( 'M j, Y', strtotime( esc_html( $content ) ) )`|
+|"float"|`(float)$content`|
+|"int"|`(int)$content`|
+|"object"| None|
+|Unrecognized string|`wp_kses_post($content)`|
 
 ## ACF Repeater Field Data
 Fetch repeater field data from post_meta table. Returns subfield data grouped by "row" into arrays.
