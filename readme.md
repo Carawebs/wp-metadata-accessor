@@ -8,9 +8,16 @@ Run:
 composer require carawebs/wp-metadata-accessor
 ~~~
 
-## Examples
+## Examples: Simple Postmeta Field Data
 From within theme files, instantiate `Carawebs\DataAccessor\PostMetaData`.
 
+You can then easily return field data by means of the `PostMetaData::getField()` method.
+
+~~~
+PostMetaData::getField( string $fieldName, string $filter)
+~~~
+
+Sample usage:
 ~~~php
 $postMeta = new Carawebs\DataAccessor\PostMetaData;
 
@@ -26,6 +33,9 @@ $intro_text = $postMeta->getField('intro_text', 'esc_html');
 // returned content filtered by WordPress 'the_content' filter
 $extra_content = $postMeta->getContentField('extra_content');
 ~~~
+
+## Filters
+The `PostMetaData::getField()` method accepts an optional string parameter. This is used to determine the filter method that should be applied to the returned data.
 
 ## ACF Repeater Field Data
 Fetch repeater field data from post_meta table. Returns subfield data grouped by "row" into arrays.
