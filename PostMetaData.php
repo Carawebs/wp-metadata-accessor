@@ -77,4 +77,19 @@ class PostMetaData extends Data
         }
         return $data;
     }
+
+    /**
+     * Helper method to return image data.
+     *
+     * Receives a postmeta fieldname that holds an image ID, returns an array of
+     * data that can be used to markup the image.
+     * @param  string $fieldName meta_key in WP postmeta table.
+     * @param  array  $type      Specify image_ID => image_size.
+     * @return array             Data required to build image.
+     */
+    public function getImage($fieldName, $type = NULL)
+    {
+        $imageID = get_post_meta( $this->id, $fieldName, true );
+        return $this->imageFilter( $imageID, $type );
+    }
 }

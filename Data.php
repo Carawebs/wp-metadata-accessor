@@ -90,8 +90,8 @@ abstract class Data {
             'alt'     => $image_object['alt'],
             'caption' => $image_object['caption']
         ];
-        //return $output;
-        return $image_object;
+        return $output;
+        //return $image_object;
     }
 
     /**
