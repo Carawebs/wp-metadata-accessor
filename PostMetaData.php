@@ -79,7 +79,7 @@ class PostMetaData extends Data
     }
 
     /**
-     * Helper method to return image data.
+     * Helper method to return image data from an image ID stored in postmeta.
      *
      * Receives a postmeta fieldname that holds an image ID, returns an array of
      * data that can be used to markup the image.
