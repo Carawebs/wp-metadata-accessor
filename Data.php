@@ -22,33 +22,33 @@ abstract class Data {
     */
     public function filter($content, $type) {
         $output = '';
-        switch( $type ) {
+        switch($type) {
             case "OEmbed":
             $output = $content;
             break;
 
             case "esc_html":
-            $output = esc_html( $content );
+            $output = esc_html($content);
             break;
 
             case "esc_url":
-            $output = esc_url( $content );
+            $output = esc_url($content);
             break;
 
             case "the_content":
-            $output = apply_filters( 'the_content', $content );
+            $output = apply_filters('the_content', $content);
             break;
 
             case "text":
-            $output = esc_html( $content );
+            $output = esc_html($content);
             break;
 
             case 'date':
-            $output = date( 'M j, Y', strtotime( esc_html( $content ) ) );
+            $output = date('M j, Y', strtotime(esc_html($content)));
             break;
 
             case 'time':
-            $output = strtotime(esc_html($content ));
+            $output = strtotime(esc_html($content));
             break;
 
             case "float":
@@ -82,8 +82,8 @@ abstract class Data {
     * @param  array  $meta             An array containing image size
     * @return array  Necessary data to build an image (ID, src, title, height, width, alt)
     */
-    public function imageFilter( $image_ID, array $meta ) {
-        $image_object = wp_prepare_attachment_for_js( $image_ID );
+    public function imageFilter($image_ID, array $meta) {
+        $image_object = wp_prepare_attachment_for_js($image_ID);
         $image_size = $meta[1];
         $output = [
             'ID'      => $image_ID,
@@ -95,7 +95,6 @@ abstract class Data {
             'caption' => $image_object['caption']
         ];
         return $output;
-        //return $image_object;
     }
 
     /**
@@ -105,8 +104,8 @@ abstract class Data {
     * @param  string $image_size    Size of image to return
     * @return string                HTML markup of image
     */
-    static public function get_image( $image_ID, $image_size = 'full' ) {
-        $image_object = wp_prepare_attachment_for_js( $image_ID );
+    static public function get_image($image_ID, $image_size = 'full') {
+        $image_object = wp_prepare_attachment_for_js($image_ID);
         $src          = $image_object['sizes'][$image_size]['url'];
         $title        = $image_object['title'];
         $height       = $image_object['sizes'][$image_size]['height'];
@@ -116,7 +115,7 @@ abstract class Data {
         return $image;
     }
 
-    static public function the_image( $image_ID, $image_size = 'full' ) {
-        echo self::get_image( $image_ID, $image_size );
+    static public function the_image($image_ID, $image_size = 'full') {
+        echo self::get_image($image_ID, $image_size);
     }
 }
