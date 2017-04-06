@@ -47,6 +47,10 @@ abstract class Data {
             $output = date( 'M j, Y', strtotime( esc_html( $content ) ) );
             break;
 
+            case 'time':
+            $output = strtotime(esc_html($content ));
+            break;
+
             case "float":
             $output = (float)$content;
             break;
