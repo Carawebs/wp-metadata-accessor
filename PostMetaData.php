@@ -18,15 +18,27 @@ class PostMetaData extends Data
     }
 
     /**
+     * Allow override of ID
+     * @param string|int $id Post ID for which to fetch metadata
+     */
+    public function setID($id = NULL)
+    {
+        if (empty($id)) return $this;
+        //$this->id = $id;
+        return $this;
+    }
+
+    /**
      * Return field value.
      *
      * @param  string $fieldName  The postmeta field name
      * @param  string $filterType Filter to apply
      * @return string             Field value, possibly filtered
      */
-    public function getField($fieldName, $filterType = NULL)
+    public function getField($fieldName, $filterType = NULL, $postID = NULL)
     {
-        $raw = get_post_meta($this->id, $fieldName, true);
+        $id = !empty($postID) ? $postID : $this->id;
+        $raw = get_post_meta($id, $fieldName, true);
         if ($filterType) {
             return $this->filter($raw, $filterType);
         } else {
@@ -56,16 +68,17 @@ class PostMetaData extends Data
      * @param  array  $subfields Array of subfield arguments
      * @return string            HTML for output
      */
-    public function getRepeaterField($fieldName, $subfields)
+    public function getRepeaterField($fieldName, $subfields, $id = NULL)
     {
-        $repeater = get_post_meta( $this->id, $fieldName, true );
-        if( ! $repeater ) return;
+        $id = !empty($id) ? $id : $this->id;
+        $repeater = get_post_meta( $id, $fieldName, true );
+        if(!$repeater) return;
         $data = [];
         for( $i = 0; $i < $repeater; $i++ ) {
             $row = [];
             foreach($subfields as $subfield => $type) {
                 $rawdata = $fieldName . '_' . $i . '_' . $subfield;
-                $output = get_post_meta($this->id, $rawdata, true);
+                $output = get_post_meta($id, $rawdata, true);
                 if (is_array($type) && 'image_ID' == $type[0]) {
                     $output = $this->imageFilter( $output, $type );
                 } else {
