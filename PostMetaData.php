@@ -105,4 +105,9 @@ class PostMetaData extends Data
         $imageID = get_post_meta( $this->id, $fieldName, true );
         return $this->imageFilter( $imageID, $type );
     }
+
+    public function setFlexibleField($fieldName)
+    {
+        # code...
+    }
 }
