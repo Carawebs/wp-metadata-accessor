@@ -9,7 +9,24 @@ namespace Carawebs\DataAccessor;
 * @author     David Egan <david@carawebs.com>
 * @link:      http://dev-notes.eu/
 */
-abstract class Data {
+abstract class Data
+{
+    /**
+    * Create an array of appropriately filtered data.
+    *
+    * @param  array $data In the format `['value'=>$val, 'type'=>$type]`.
+    * @return array Filtered data content.
+    */
+    public function filterDataByType($data) {
+        $filteredData = [];
+        foreach ($data as $key => $typeValue) {
+            if(empty($typeValue['value'])) {continue;}
+            $value = $this->filter($typeValue['value'], $typeValue['type']);
+            $filteredData[$key] = $value;
+        }
+        return $filteredData;
+    }
+
     /**
     * Filter/Sanitize data according by type
     *
@@ -27,6 +44,7 @@ abstract class Data {
             $output = $content;
             break;
 
+            case "text":
             case "esc_html":
             $output = esc_html($content);
             break;
@@ -35,12 +53,9 @@ abstract class Data {
             $output = esc_url($content);
             break;
 
+            case "wysiwyg":
             case "the_content":
             $output = apply_filters('the_content', $content);
-            break;
-
-            case "text":
-            $output = esc_html($content);
             break;
 
             case 'date':
