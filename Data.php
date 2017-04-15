@@ -12,6 +12,34 @@ namespace Carawebs\DataAccessor;
 abstract class Data
 {
     /**
+    * Return the ACF field type.
+    *
+    * When an ACF custom field value is saved against the key `$fieldName`, a
+    * corresponding metadata field is added, in the format `'_'.$fieldName`. The value
+    * referenced by this key is a `post_name` for a post of post_type `acf-field`.
+    * The post_content of this post holds a serialized array of data about the
+    * field. The most useful value in this case is 'type'.
+    * 
+    * @param  string $metaFieldKey Custom metadata field key associated with a `post_name`
+    * @return string The type of field (retrieved from `post_content`)
+    */
+    protected function fieldType($metaFieldKey)
+    {
+        global $wpdb;
+        $postName = get_post_meta($this->post_ID, $metaFieldKey, true);
+        $data = $wpdb->get_col( $wpdb->prepare(
+            "
+            SELECT      post_content
+            FROM        $wpdb->posts
+            WHERE       post_name = %s
+            ",
+            $postName
+        ));
+        $data = unserialize($data[0]);
+        return $data['type'];
+    }
+
+    /**
     * Create an array of appropriately filtered data.
     *
     * @param  array $data In the format `['value'=>$val, 'type'=>$type]`.

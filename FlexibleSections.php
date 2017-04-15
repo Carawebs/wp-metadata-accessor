@@ -18,12 +18,11 @@ class FlexibleSections extends Data {
         $this->flex_fieldname = $flex_fieldname;
     }
 
-    /**
+   /**
     * Build an array of flexible content data.
     *
-    * The array of flexible content is set by an ACF Dynamic content field.
-    *
-    * @return string The HTML markup for the flexible content field
+    * The array of flexible content is probably set by an ACF Dynamic content field.
+    * @return array Section data as an array of objects.
     */
     public function flexibleContentData ()
     {
@@ -49,7 +48,7 @@ class FlexibleSections extends Data {
     * @param  int|string $index The section index
     * @param  string $section The section name
     * @param  string $classname Unique classname
-    * @return array General metadata for the section
+    * @return array Metadata for this section
     */
     public function metadata($index, $section = NULL, $classname = NULL)
     {
@@ -59,6 +58,7 @@ class FlexibleSections extends Data {
         $sectionFields = [];
 
         foreach ($data as $key => $value) {
+
             // Only fields with a custom field postmeta key
             if (FALSE !== strpos($key, $unique_id)) {
                 // Exclude fields that are prefixed with "_"
@@ -79,27 +79,6 @@ class FlexibleSections extends Data {
         $obj->data = $sectionFields;
         $obj->filteredData = $this->filterDataByType($sectionFields);
         return $obj;
-    }
-
-    /**
-    * Return data about the field
-    * @param  [type] $metaFieldKey [description]
-    * @return [type]               [description]
-    */
-    private function fieldType($metaFieldKey)
-    {
-        global $wpdb;
-        $postName = get_post_meta($this->post_ID, $metaFieldKey, true);
-        $data = $wpdb->get_col( $wpdb->prepare(
-            "
-            SELECT      post_content
-            FROM        $wpdb->posts
-            WHERE       post_name = %s
-            ",
-            $postName
-        ));
-        $data = unserialize($data[0]);
-        return $data['type'];
     }
 
     /**
