@@ -31,9 +31,9 @@ class PostMetaData extends Data
     /**
      * Return field value.
      *
-     * @param  string $fieldName  The postmeta field name
+     * @param  string $fieldName The postmeta field name
      * @param  string $filterType Filter to apply
-     * @return string             Field value, possibly filtered
+     * @return string Field value, possibly filtered
      */
     public function getField($fieldName, $filterType = NULL, $postID = NULL)
     {
@@ -52,9 +52,9 @@ class PostMetaData extends Data
      * @param  string $fieldName The postmeta field name
      * @return string            HTML - filtered by 'the_content'
      */
-    public function getContentField($fieldName)
+    public function getContentField($fieldName, $postID = NULL)
     {
-        return $this->getField($fieldName, 'the_content');
+        return $this->getField($fieldName, 'the_content', $postID);
     }
 
     /**
