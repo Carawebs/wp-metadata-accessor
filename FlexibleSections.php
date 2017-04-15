@@ -13,9 +13,10 @@ class FlexibleSections extends Data {
     * @param int       $post_ID The post ID
     * @param string    $flex_fieldname The name of the flexible field
     */
-    public function __construct ( $post_ID = NULL, $flex_fieldname = 'flex' ) {
-        $this->post_ID = $post_ID ?? get_the_ID();
+    public function __construct ($postID = NULL, $flex_fieldname = 'flex') {
+        // $this->postID = $postID ?? get_the_ID();
         $this->flex_fieldname = $flex_fieldname;
+        parent::__construct($postID);
     }
 
    /**
@@ -31,7 +32,7 @@ class FlexibleSections extends Data {
         * The key for each array item corresponds to the display index, e.g: `[$index => $fieldName]`
         * @var array
         */
-        $rows = get_post_meta( $this->post_ID, $this->flex_fieldname, true );
+        $rows = get_post_meta( $this->postID, $this->flex_fieldname, true );
         if (!$rows) return;
         $rowData = [];
 
@@ -54,7 +55,7 @@ class FlexibleSections extends Data {
     {
         $classes = $this->cssClasses($index, $section);
         $unique_id = $this->flex_fieldname . '_' . $index . '_' . $section;
-        $data = get_post_meta($this->post_ID, NULL, true);
+        $data = get_post_meta($this->postID, NULL, true);
         $sectionFields = [];
 
         foreach ($data as $key => $value) {
@@ -65,9 +66,13 @@ class FlexibleSections extends Data {
                 if ('_' === $key[0]) continue;
                 $simpleKey = str_replace($unique_id.'_', '', $key);
                 $value = maybe_unserialize($value[0]);
-                $type = $this->fieldType('_'.$key);
+                $fieldMetadata = $this->getFieldAttributes($key);
+                $returnFormat = $fieldMetadata['return_format'] ?? NULL;
+                $type = $fieldMetadata['type'] ?? NULL;
+
                 $sectionFields[$simpleKey]['value'] = $value;
                 $sectionFields[$simpleKey]['type'] = $type;
+                $sectionFields[$simpleKey]['returnFormat'] = $returnFormat;
             }
         }
 
@@ -82,9 +87,10 @@ class FlexibleSections extends Data {
     }
 
     /**
-    * [cssClasses description]
-    * @param [type] $count [description]
-    * @param [type] $prefix [description]
+    * Returns an array of appropriate CSS classes for a section,
+    *
+    * @param int|string $count The index of this section.
+    * @param string $prefix The section type.
     */
     private function cssClasses($count, $prefix)
     {

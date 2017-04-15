@@ -11,6 +11,10 @@ namespace Carawebs\DataAccessor;
 */
 abstract class Data
 {
+    public function __construct($postID = NULL)
+    {
+        $this->postID = $postID ?? get_the_ID();
+    }
     /**
     * Return the ACF field type.
     *
@@ -19,14 +23,16 @@ abstract class Data
     * referenced by this key is a `post_name` for a post of post_type `acf-field`.
     * The post_content of this post holds a serialized array of data about the
     * field. The most useful value in this case is 'type'.
-    * 
+    *
     * @param  string $metaFieldKey Custom metadata field key associated with a `post_name`
     * @return string The type of field (retrieved from `post_content`)
     */
-    protected function fieldType($metaFieldKey)
+    protected function getFieldAttributes($metaFieldKey)
     {
+        $postName = get_post_meta($this->postID, '_' . $metaFieldKey, true);
+        if(empty($postName)) return;
+
         global $wpdb;
-        $postName = get_post_meta($this->post_ID, $metaFieldKey, true);
         $data = $wpdb->get_col( $wpdb->prepare(
             "
             SELECT      post_content
@@ -35,8 +41,14 @@ abstract class Data
             ",
             $postName
         ));
+
         $data = unserialize($data[0]);
-        return $data['type'];
+        $fieldChars = [];
+        if (!empty($data['return_format'])) {
+            $fieldChars['return_format'] = $data['return_format'];
+        }
+        $fieldChars['type'] = $data['type'];
+        return $fieldChars;
     }
 
     /**

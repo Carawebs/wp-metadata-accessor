@@ -12,9 +12,9 @@ class PostMetaData extends Data
     /**
      * Set the post id.
      */
-    function __construct()
+    function __construct($postID = NULL)
     {
-        $this->id = get_the_ID();
+        parent::__construct($postID);
     }
 
     /**
@@ -37,20 +37,33 @@ class PostMetaData extends Data
      */
     public function getField($fieldName, $filterType = NULL, $postID = NULL)
     {
-        $id = !empty($postID) ? $postID : $this->id;
-        $raw = get_post_meta($id, $fieldName, true);
+        $id = !empty($postID) ? $postID : $this->postID;
+        $rawValue = get_post_meta($id, $fieldName, true);
         if ($filterType) {
-            return $this->filter($raw, $filterType);
+            return $this->filter($rawValue, $filterType);
         } else {
-            return $raw;
+            $fieldMetadata = $this->getFieldAttributes($fieldName);
+            $type = $fieldMetadata['type'];
+
+            /**
+             * If this is an ACF field, return the properly filtered value based
+             * on the returned field type. Otherwise return the raw value.
+             */
+            if (!empty($type)) {
+                return $this->filter($rawValue, $type);
+            } else {
+                return $rawValue;
+            }
         }
     }
 
     /**
      * Apply 'the_content' WordPress filter to the returned post metadata.
      *
-     * @param  string $fieldName The postmeta field name
-     * @return string            HTML - filtered by 'the_content'
+     * @see https://developer.wordpress.org/reference/hooks/the_content/  Documentation of 'the_content' WordPress filter
+     * @param string $fieldName The postmeta field name
+     * @param int|string $postID ID of post for which to fetch metadata
+     * @return string HTML filtered by 'the_content'
      */
     public function getContentField($fieldName, $postID = NULL)
     {
@@ -68,9 +81,9 @@ class PostMetaData extends Data
      * @param  array  $subfields Array of subfield arguments
      * @return string            HTML for output
      */
-    public function getRepeaterField($fieldName, $subfields, $id = NULL)
+    public function getRepeaterField($fieldName, $subfields, $postID = NULL)
     {
-        $id = !empty($id) ? $id : $this->id;
+        $id = !empty($postID) ? $postID : $this->postID;
         $repeater = get_post_meta( $id, $fieldName, true );
         if(!$repeater) return;
         $data = [];
@@ -91,6 +104,33 @@ class PostMetaData extends Data
         return $data;
     }
 
+    public function getAcfRepeaterFieldData($fieldName, $subFields, $postID = NULL)
+    {
+        $id = !empty($postID) ? $postID : $this->postID;
+        $repeater = get_post_meta($id, $fieldName, true); // Number of subfields
+        if(!$repeater) return;
+
+        $data = [];
+        for($i = 0; $i < $repeater; $i++) {
+            $row = [];
+            foreach($subFields as $subField) {
+                $subFieldName = $fieldName . '_' . $i . '_' . $subField;
+                $subFieldData = get_post_meta($id, $subFieldName, true);
+                $subFieldAtts = $this->getFieldAttributes($subFieldName);
+                $type = $subFieldAtts['type'];
+                if ('image' === $type) {
+                    $subFieldData = $this->imageFilter( $subFieldData, [NULL,'full'] );
+                } else {
+                    $subFieldData = $this->filter( $subFieldData, $type );
+                }
+                $row[$subField] = $subFieldData;
+            }
+            $data[] = $row;
+        }
+        var_dump($data);
+        return $data;
+    }
+
     /**
      * Helper method to return image data from an image ID stored in postmeta.
      *
@@ -104,10 +144,5 @@ class PostMetaData extends Data
     {
         $imageID = get_post_meta( $this->id, $fieldName, true );
         return $this->imageFilter( $imageID, $type );
-    }
-
-    public function setFlexibleField($fieldName)
-    {
-        # code...
     }
 }
