@@ -37,7 +37,7 @@ class FlexibleSections extends Data {
         $rowData = [];
 
         foreach( (array)$rows as $index => $subfield) {
-            $rowData []= $this->metaData($index, $subfield);
+            $rowData[] = $this->metaData($index, $subfield);
         }
 
         return $rowData;
