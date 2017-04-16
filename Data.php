@@ -15,6 +15,78 @@ abstract class Data
     {
         $this->postID = $postID ?? get_the_ID();
     }
+
+    /**
+    * Create an array of appropriately filtered data.
+    *
+    * @param  array $data In the format `['value'=>$val, 'type'=>$type]`.
+    * @return array Filtered data content.
+    */
+    public function filterDataByType($data) {
+        $filteredData = [];
+        foreach ($data as $key => $fieldAttributes) {
+            if(empty($fieldAttributes['value'])) {continue;}
+            $value = $this->filter($fieldAttributes['value'], $fieldAttributes['type'], $fieldAttributes['returnFormat']);
+            $filteredData[$key] = $value;
+        }
+        return $filteredData;
+    }
+
+    /**
+    * Filter/Sanitize data according by type
+    *
+    * @since 1.0.0
+    * @uses esc_html()
+    * @uses wp_kses_post()
+    * @param  string $content Data to be filtered
+    * @param  string $type    Type of data - denotes the filter to use
+    * @return string          Filtered data
+    */
+    public function filter($content, $type, $returnFormat = NULL) {
+        $output = '';
+        switch($type) {
+        case 'relationship':
+            $output = $this->relationship($content, $returnFormat);
+            break;
+        case 'image':
+            $output = $this->image($content, $returnFormat);
+            break;
+        case "text":
+        case "esc_html":
+            $output = esc_html($content);
+            break;
+        case "wysiwyg":
+        case "the_content":
+            $output = apply_filters('the_content', $content);
+            break;
+        case "esc_url":
+            $output = esc_url($content);
+            break;
+        case "OEmbed":
+            $output = $content;
+            break;
+        case 'date':
+            $output = date('M j, Y', strtotime(esc_html($content)));
+            break;
+        case 'time':
+            $output = strtotime(esc_html($content));
+            break;
+        case "float":
+            $output = (float)$content;
+            break;
+        case "int":
+            $output = (int)$content;
+            break;
+        case "object":
+            return $content;
+            break;
+        default:
+            return wp_kses_post($content);
+            break;
+        }
+        return $output;
+    }
+
     /**
     * Return the ACF field type.
     *
@@ -51,126 +123,30 @@ abstract class Data
         return $fieldChars;
     }
 
-    /**
-    * Create an array of appropriately filtered data.
-    *
-    * @param  array $data In the format `['value'=>$val, 'type'=>$type]`.
-    * @return array Filtered data content.
-    */
-    public function filterDataByType($data) {
-        $filteredData = [];
-        foreach ($data as $key => $typeValue) {
-            if(empty($typeValue['value'])) {continue;}
-            $value = $this->filter($typeValue['value'], $typeValue['type']);
-            $filteredData[$key] = $value;
+    public function relationship(array $postIDs, $returnFormat = NULL)
+    {
+        $returnFormat = $returnFormat ?? 'ids';
+        var_dump($returnFormat);
+        if ('ids' === $returnFormat) {
+            return $postIDs;
+        } elseif ('object' === $returnFormat) {
+            return array_map(function($id){
+                return get_post($id);
+            }, $postIDs);
         }
-        return $filteredData;
     }
 
-    /**
-    * Filter/Sanitize data according by type
-    *
-    * @since 1.0.0
-    * @uses esc_html()
-    * @uses wp_kses_post()
-    * @param  string $content Data to be filtered
-    * @param  string $type    Type of data - denotes the filter to use
-    * @return string          Filtered data
-    */
-    public function filter($content, $type) {
-        $output = '';
-        switch($type) {
-            case "OEmbed":
-            $output = $content;
-            break;
-
-            case "text":
-            case "esc_html":
-            $output = esc_html($content);
-            break;
-
-            case "esc_url":
-            $output = esc_url($content);
-            break;
-
-            case "wysiwyg":
-            case "the_content":
-            $output = apply_filters('the_content', $content);
-            break;
-
-            case 'date':
-            $output = date('M j, Y', strtotime(esc_html($content)));
-            break;
-
-            case 'time':
-            $output = strtotime(esc_html($content));
-            break;
-
-            case "float":
-            $output = (float)$content;
-            break;
-
-            case "int":
-            $output = (int)$content;
-            break;
-
-            case "object":
-            return $content;
-            break;
-
-            default:
-            return wp_kses_post($content);
-            break;
+    private function image($id, $returnFormat = NULL)
+    {
+        $imgArray = wp_prepare_attachment_for_js($id);
+        if ('array' === $returnFormat) {
+            return $imgArray;
+        } elseif ('object' === $returnFormat) {
+            return (object)$imgArray;
+        } elseif ('url' === $returnFormat) {
+            return $imgArray['url'];
+        } else {
+            return $id;
         }
-        return $output;
-    }
-
-    /**
-    * Filter and return an image.
-    *
-    * This static method will return an array of necessary attributes to enable
-    * construction of HTML for an image.
-    *
-    * @since 1.0.0
-    * @uses wp_prepare_attachment_for_js()
-    * @param  string|integer $image_ID Post ID of the image to be returned
-    * @param  array  $meta             An array containing image size
-    * @return array  Necessary data to build an image (ID, src, title, height, width, alt)
-    */
-    public function imageFilter($image_ID, array $meta) {
-        $image_object = wp_prepare_attachment_for_js($image_ID);
-        $image_size = $meta[1];
-        $output = [
-            'ID'      => $image_ID,
-            'url'     => $image_object['sizes'][$image_size]['url'],
-            'title'   => $image_object['title'],
-            'height'  => $image_object['sizes'][$image_size]['height'],
-            'width'   => $image_object['sizes'][$image_size]['width'],
-            'alt'     => $image_object['alt'],
-            'caption' => $image_object['caption']
-        ];
-        return $output;
-    }
-
-    /**
-    * Return image markup
-    *
-    * @param  int|string $image_ID  Post ID of image
-    * @param  string $image_size    Size of image to return
-    * @return string                HTML markup of image
-    */
-    static public function get_image($image_ID, $image_size = 'full') {
-        $image_object = wp_prepare_attachment_for_js($image_ID);
-        $src          = $image_object['sizes'][$image_size]['url'];
-        $title        = $image_object['title'];
-        $height       = $image_object['sizes'][$image_size]['height'];
-        $width        = $image_object['sizes'][$image_size]['width'];
-        $alt          = $image_object['alt'];
-        $image ="<img src='$src' width='$width' height='$height' title='$title' class='img-responsive'/>";
-        return $image;
-    }
-
-    static public function the_image($image_ID, $image_size = 'full') {
-        echo self::get_image($image_ID, $image_size);
     }
 }
