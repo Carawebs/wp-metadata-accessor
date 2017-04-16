@@ -126,12 +126,11 @@ abstract class Data
     public function relationship(array $postIDs, $returnFormat = NULL)
     {
         $returnFormat = $returnFormat ?? 'ids';
-        var_dump($returnFormat);
         if ('ids' === $returnFormat) {
             return $postIDs;
         } elseif ('object' === $returnFormat) {
-            return array_map(function($id){
-                return get_post($id);
+            return array_map(function($id) {
+                return $this->postObject($id);
             }, $postIDs);
         }
     }
@@ -148,5 +147,13 @@ abstract class Data
         } else {
             return $id;
         }
+    }
+
+    private function postObject($id)
+    {
+        $obj = get_post($id);
+        $obj->featuredImage = wp_prepare_attachment_for_js(get_post_thumbnail_id($id));
+        $obj->permalink = get_permalink($id);
+        return $obj;
     }
 }
