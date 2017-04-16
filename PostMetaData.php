@@ -18,17 +18,6 @@ class PostMetaData extends Data
     }
 
     /**
-     * Allow override of ID
-     * @param string|int $id Post ID for which to fetch metadata
-     */
-    public function setID($id = NULL)
-    {
-        if (empty($id)) return $this;
-        //$this->id = $id;
-        return $this;
-    }
-
-    /**
      * Return field value.
      *
      * @param  string $fieldName The postmeta field name
@@ -44,13 +33,14 @@ class PostMetaData extends Data
         } else {
             $fieldMetadata = $this->getFieldAttributes($fieldName);
             $type = $fieldMetadata['type'];
+            $returnFormat = $fieldMetadata['return_format']  ?? NULL;
 
             /**
              * If this is an ACF field, return the properly filtered value based
              * on the returned field type. Otherwise return the raw value.
              */
             if (!empty($type)) {
-                return $this->filter($rawValue, $type);
+                return $this->filter($rawValue, $type, $returnFormat);
             } else {
                 return $rawValue;
             }
@@ -77,6 +67,7 @@ class PostMetaData extends Data
      * $output is the image_ID, $type[0] is the string 'image_ID' - to give the data type
      * $type[1] is a string denoting the specified image size to return.
      *
+     * @deprecated
      * @param  string $fieldName The postmeta field name
      * @param  array  $subfields Array of subfield arguments
      * @return string            HTML for output
@@ -104,7 +95,15 @@ class PostMetaData extends Data
         return $data;
     }
 
-    public function getAcfRepeaterFieldData($fieldName, $subFields, $postID = NULL)
+    /**
+     * Repeater field data.
+     *
+     * @param string $fieldName Name of the repeater field.
+     * @param array $subFields Array of subfield names.
+     * @param string|int $postID The post ID for which to fetch post metadata.
+     * @return Array Repeater field data
+     */
+    public function getAcfRepeaterFieldData($fieldName, $subFields, $postID = NULL) : array
     {
         $id = !empty($postID) ? $postID : $this->postID;
         $repeater = get_post_meta($id, $fieldName, true); // Number of subfields
@@ -117,17 +116,13 @@ class PostMetaData extends Data
                 $subFieldName = $fieldName . '_' . $i . '_' . $subField;
                 $subFieldData = get_post_meta($id, $subFieldName, true);
                 $subFieldAtts = $this->getFieldAttributes($subFieldName);
-                $type = $subFieldAtts['type'];
-                if ('image' === $type) {
-                    $subFieldData = $this->imageFilter( $subFieldData, [NULL,'full'] );
-                } else {
-                    $subFieldData = $this->filter( $subFieldData, $type );
-                }
+                $type = $subFieldAtts['type'] ?? NULL;
+                $returnFormat = $subFieldAtts['return_format'] ?? NULL;
+                $subFieldData = $this->filter($subFieldData, $type, $returnFormat);
                 $row[$subField] = $subFieldData;
             }
             $data[] = $row;
         }
-        var_dump($data);
         return $data;
     }
 
@@ -140,9 +135,12 @@ class PostMetaData extends Data
      * @param  array  $type      Specify image_ID => image_size.
      * @return array             Data required to build image.
      */
-    public function getImage($fieldName, $type = NULL)
+    public function getImage($fieldName, $returnFormat = NULL)
     {
-        $imageID = get_post_meta( $this->id, $fieldName, true );
-        return $this->imageFilter( $imageID, $type );
+        $imageID = get_post_meta( $this->postID, $fieldName, true );
+        if(empty($imageID)) return;
+
+        $returnFormat = $returnFormat ?? 'array';
+        return $this->filter( $imageID, 'image', $returnFormat );
     }
 }
