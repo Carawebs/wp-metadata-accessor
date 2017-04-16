@@ -125,8 +125,8 @@ abstract class Data
 
     public function relationship(array $postIDs, $returnFormat = NULL)
     {
-        $returnFormat = $returnFormat ?? 'ids';
-        if ('ids' === $returnFormat) {
+        $returnFormat = $returnFormat ?? 'id';
+        if ('id' === $returnFormat) {
             return $postIDs;
         } elseif ('object' === $returnFormat) {
             return array_map(function($id) {
