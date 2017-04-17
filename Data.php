@@ -96,7 +96,7 @@ abstract class Data
     * The post_content of this post holds a serialized array of data about the
     * field. The most useful value in this case is 'type'.
     *
-    * @param  string $metaFieldKey Custom metadata field key associated with a `post_name`
+    * @param string $metaFieldKey Custom metadata field key associated with a `post_name`
     * @return string The type of field (retrieved from `post_content`)
     */
     protected function getFieldAttributes($metaFieldKey)
@@ -123,6 +123,15 @@ abstract class Data
         return $fieldChars;
     }
 
+    /**
+     * Process an array of Post IDs.
+     *
+     * Used to build post-to-post relationships.
+     *
+     * @param array $postIDs Post IDs
+     * @param string $returnFormat Specify 'id' or 'object'
+     * @return array Post IDs|Post objects
+     */
     public function relationship(array $postIDs, $returnFormat = NULL)
     {
         $returnFormat = $returnFormat ?? 'id';
@@ -135,6 +144,13 @@ abstract class Data
         }
     }
 
+    /**
+     * Create image data necessary for markup based on an image ID input.
+     *
+     * @param string|int $id The image ID
+     * @param string $returnFormat The return format
+     * @return array|object|string|int Determined by $returnFormat
+     */
     private function image($id, $returnFormat = NULL)
     {
         $imgArray = wp_prepare_attachment_for_js($id);
@@ -149,11 +165,23 @@ abstract class Data
         }
     }
 
+    /**
+     * Prepare a modified post object.
+     *
+     * This returns the standard WordPress post object, with some additional properties:
+     * - An array of data relating to the post featured image
+     * - The post permalink
+     * This saves work in the controller - these data are almost invariably needed
+     * when using post objects returned from postmeta.
+     *
+     * @param  [type] $id [description]
+     * @return [type]     [description]
+     */
     private function postObject($id)
     {
         $obj = get_post($id);
         $obj->featuredImage = wp_prepare_attachment_for_js(get_post_thumbnail_id($id));
         $obj->permalink = get_permalink($id);
-        return $obj;
+        return apply_filters('carawebs/wp-metadata-accessor/post-object', $obj, $id);
     }
 }

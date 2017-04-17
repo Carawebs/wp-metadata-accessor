@@ -34,19 +34,26 @@ $intro_text = $postMeta->getField('intro_text', 'esc_html');
 $extra_content = $postMeta->getContentField('extra_content');
 ~~~
 
-## Filters
-The `PostMetaData::getField()` method accepts an optional string as a second  parameter. This is used to determine the filter or method that should be applied to the returned data.
+## Returned Data
+The `PostMetaData::getField()` method accepts an optional string denoting the field type as a second parameter. This is used to determine the filtering method that should be applied to the returned data.
+
+If you're using ACF fields you don't specify a field type - this is determined automatically.
+
+### Returned Data Processing
 
 |Parameter|Filter or Method Used on `$content`|
 |-|-|
-|"OEmbed"| None |
+|"relationship"| `Data::relationship(array $postIDs, $returnFormat = NULL)`: returns either an array of post IDs or customised post objects |
+|"image"| `Data::image($id, $returnFormat = NULL)`: returns either an image data array, object, url or ID |
 |"esc_html"| `esc_html($content)`|
+|"text"|`esc_html( $content )`|
 |"esc_url"| `esc_url( $content )`|
 |"the_content"| `apply_filters( 'the_content', $content )`|
-|"text"|`esc_html( $content )`|
+|"wysiwyg"| `apply_filters( 'the_content', $content )`|
 |"date"| `date( 'M j, Y', strtotime( esc_html( $content ) ) )`|
 |"float"|`(float)$content`|
 |"int"|`(int)$content`|
+|"OEmbed"| None |
 |"object"| None|
 |Unrecognized string|`wp_kses_post($content)`|
 
@@ -78,4 +85,20 @@ $carouselSubfields = [
 ];
 
 $carouselData = $postMeta->getRepeaterField('slider', $carouselSubfields);
+~~~
+
+## Post-to-Post Relationships
+The field type 'relationship' fetches an array of post IDs.
+
+For an ACF relationship field, `$this->postMeta->getField('related_posts')` ...will return type based on that specified in the ACF field GUI.
+
+Otherwise, you can pass in a field name and specify the 'relationship' type and an array of post IDs will be returned: `$this->postMeta->getField('related_posts', 'relationship')`.
+
+If you're using ACF fields and the field 'return_format' is set to return an object, a modified WordPress post object with additional properties representing the post featured image and permalink will be returned. This Object is filtered with `'carawebs/wp-metadata-accessor/post-object'`. To use this filter, add something like this within the active theme:
+
+~~~php
+add_filter('carawebs/wp-metadata-accessor/post-object', function($obj, $id) {
+    $obj->newProperty = someFunction($id);
+    return $obj;
+}, 1, 2);
 ~~~
