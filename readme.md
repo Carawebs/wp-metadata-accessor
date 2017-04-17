@@ -70,9 +70,9 @@ The subfields are created by concatenating the repeater field name with the
 index and the subfield name. This allows as many items as necessary to be
 added. In key => value notation, the data collection looks like this:
 
-Repeater field: $repeater => $count
-First repeater subfield: $first_subfield => $repeater . '_' . $index . '_' . $first_subfield
-Second repeater subfield: $second_sibfield => $repeater . '_' . $index . '_' . $second_subfield // etc
+Repeater field: `$repeater => $count`
+First repeater subfield: `$first_subfield => $repeater . '_' . $index . '_' . $first_subfield`
+Second repeater subfield: `$second_subfield => $repeater . '_' . $index . '_' . $second_subfield` // etc
 
 To use:
 
