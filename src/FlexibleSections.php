@@ -78,6 +78,7 @@ class FlexibleSections extends Data {
 
         $obj = new \stdClass;
         $obj->sectionName = $unique_id;
+        $obj->sectionCssId = str_replace('_', '-', $unique_id);
         $obj->flexFieldType = $section;
         $obj->index = $index;
         $obj->cssClasses = $classes;
