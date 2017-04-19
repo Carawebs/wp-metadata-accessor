@@ -14,7 +14,6 @@ class FlexibleSections extends Data {
     * @param string    $flex_fieldname The name of the flexible field
     */
     public function __construct ($postID = NULL, $flex_fieldname = 'flex') {
-        // $this->postID = $postID ?? get_the_ID();
         $this->flex_fieldname = $flex_fieldname;
         parent::__construct($postID);
     }
@@ -29,17 +28,15 @@ class FlexibleSections extends Data {
     {
         /**
         * An array of the selected flexible field names, in the correct display order.
-        * The key for each array item corresponds to the display index, e.g: `[$index => $fieldName]`
-        * @var array
+        * The key for each array item corresponds to the display index, the value being
+        * the field name. E.g: `[$index => $fieldName]`
         */
         $rows = get_post_meta( $this->postID, $this->flex_fieldname, true );
         if (!$rows) return;
         $rowData = [];
-
         foreach( (array)$rows as $index => $subfield) {
             $rowData[] = $this->metaData($index, $subfield);
         }
-
         return $rowData;
     }
 
@@ -58,18 +55,20 @@ class FlexibleSections extends Data {
         $data = get_post_meta($this->postID, NULL, true);
         $sectionFields = [];
 
+        /**
+         * Loop through the postmeta fields that include the specified $unique_id
+         * in the field key. This value corresponds to the ACF flexible field
+         * for the current section - field keys containing this string denote
+         * the fields associated with the current section.
+         */
         foreach ($data as $key => $value) {
-
-            // Only fields with a custom field postmeta key
             if (FALSE !== strpos($key, $unique_id)) {
-                // Exclude fields that are prefixed with "_"
-                if ('_' === $key[0]) continue;
+                if ('_' === $key[0]) continue; // Exclude fields that are prefixed with "_"
                 $simpleKey = str_replace($unique_id.'_', '', $key);
                 $value = maybe_unserialize($value[0]);
                 $fieldMetadata = $this->getFieldAttributes($key);
                 $returnFormat = $fieldMetadata['return_format'] ?? NULL;
                 $type = $fieldMetadata['type'] ?? NULL;
-
                 $sectionFields[$simpleKey]['value'] = $value;
                 $sectionFields[$simpleKey]['type'] = $type;
                 $sectionFields[$simpleKey]['returnFormat'] = $returnFormat;

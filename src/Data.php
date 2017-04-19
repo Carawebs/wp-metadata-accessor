@@ -48,6 +48,9 @@ abstract class Data
         case 'relationship':
             $output = $this->relationship($content, $returnFormat);
             break;
+        case 'post_object':
+            $output = $this->acfPostObjectField($content, $returnFormat);
+            break;
         case 'image':
             $output = $this->image($content, $returnFormat);
             break;
@@ -141,6 +144,16 @@ abstract class Data
             return array_map(function($id) {
                 return $this->postObject($id);
             }, $postIDs);
+        }
+    }
+
+    public function AcfPostObjectField($postID, $returnFormat = NULL)
+    {
+        $returnFormat = $returnFormat ?? 'id';
+        if ('id' === $returnFormat) {
+            return $postID;
+        } elseif ('object' === $returnFormat) {
+            return $this->postObject($postID);
         }
     }
 
