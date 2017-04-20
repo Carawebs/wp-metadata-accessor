@@ -19,14 +19,41 @@ abstract class Data
     /**
     * Create an array of appropriately filtered data.
     *
-    * @param  array $data In the format `['value'=>$val, 'type'=>$type]`.
+    * This method receives an array of postmeta data. Each element of the `$data`
+    * array is structured like this:
+    * ```php
+    * "field_name" => [
+    *    "value": "the value",
+    *    "type": "text",
+    *    "returnFormat": null
+    * ],
+    * ```
+    *
+    * @param  array $data Contains all necessary field attributes.
     * @return array Filtered data content.
     */
-    public function filterDataByType($data) {
+    public function filterDataByType(array $data) {
+        $this->logger($data, false);
         $filteredData = [];
+
         foreach ($data as $key => $fieldAttributes) {
-            if(empty($fieldAttributes['value'])) {continue;}
-            $value = $this->filter($fieldAttributes['value'], $fieldAttributes['type'], $fieldAttributes['returnFormat']);
+            if(empty($fieldAttributes['value'])) continue;
+            if ('repeater' === $fieldAttributes['type']) {
+                $value = [];
+                foreach ($fieldAttributes['subfields'] as $index => $subField) {
+                    foreach ($subField as $subFieldName => $subFieldAttributes) {
+                        $value[$index][$subFieldName] = $this->filter(
+                            $subFieldAttributes['value'],
+                            $subFieldAttributes['type'],
+                            $subFieldAttributes['returnFormat']);
+                    }
+                }
+            } else {
+                $value = $this->filter(
+                    $fieldAttributes['value'],
+                    $fieldAttributes['type'],
+                    $fieldAttributes['returnFormat']);
+            }
             $filteredData[$key] = $value;
         }
         return $filteredData;
@@ -65,9 +92,6 @@ abstract class Data
         case "esc_url":
             $output = esc_url($content);
             break;
-        case "OEmbed":
-            $output = $content;
-            break;
         case 'date':
             $output = date('M j, Y', strtotime(esc_html($content)));
             break;
@@ -81,6 +105,8 @@ abstract class Data
             $output = (int)$content;
             break;
         case "object":
+        case "repeater":
+        case "OEmbed":
             return $content;
             break;
         default:
@@ -196,5 +222,25 @@ abstract class Data
         $obj->featuredImage = wp_prepare_attachment_for_js(get_post_thumbnail_id($id));
         $obj->permalink = get_permalink($id);
         return apply_filters('carawebs/wp-metadata-accessor/post-object', $obj, $id);
+    }
+
+    function logger($value, $overwrite = true)
+    {
+        $processedValue = json_encode($value, JSON_PRETTY_PRINT);
+        $dump = var_export($value, true);
+        $time = date('l jS F Y h:i:s A');
+        $break = "\n";
+        $break .= "-------------------------------------------------------------";
+        $break .= "\n";
+
+        $file = dirname(__FILE__) . '/log.txt';
+        if (false === $overwrite) {
+            $current = file_get_contents($file);
+            $current .= $time . $break . $processedValue . $break . $dump;
+        } else {
+            $current = $time . $break . $processedValue . $break . $dump;
+        }
+
+        file_put_contents($file, $current);
     }
 }

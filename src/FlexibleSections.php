@@ -5,7 +5,7 @@ namespace Carawebs\DataAccessor;
 * Class that returns data for dynamic sections.
 *
 */
-class FlexibleSections extends Data {
+class FlexibleSections extends PostMetaData {
 
     /**
     * Instantiate the object with fieldname and post ID.
@@ -18,7 +18,7 @@ class FlexibleSections extends Data {
         parent::__construct($postID);
     }
 
-   /**
+    /**
     * Build an array of flexible content data.
     *
     * The array of flexible content is probably set by an ACF Dynamic content field.
@@ -48,7 +48,7 @@ class FlexibleSections extends Data {
     * @param  string $classname Unique classname
     * @return array Metadata for this section
     */
-    public function metadata($index, $section = NULL, $classname = NULL)
+    public function metaData($index, $section = NULL, $classname = NULL)
     {
         $classes = $this->cssClasses($index, $section);
         $unique_id = $this->flex_fieldname . '_' . $index . '_' . $section;
@@ -56,23 +56,66 @@ class FlexibleSections extends Data {
         $sectionFields = [];
 
         /**
-         * Loop through the postmeta fields that include the specified $unique_id
-         * in the field key. This value corresponds to the ACF flexible field
-         * for the current section - field keys containing this string denote
-         * the fields associated with the current section.
-         */
+        * Filter metadata fields so that $data relates to flexible field data only.
+        * Unset the element if the current flex field string not included in
+        * the field key. Exclude fields having keys that are prefixed with "_".
+        * These represent ACF-generated fields that reference `acf-field` posts.
+        */
         foreach ($data as $key => $value) {
-            if (FALSE !== strpos($key, $unique_id)) {
-                if ('_' === $key[0]) continue; // Exclude fields that are prefixed with "_"
-                $simpleKey = str_replace($unique_id.'_', '', $key);
-                $value = maybe_unserialize($value[0]);
-                $fieldMetadata = $this->getFieldAttributes($key);
-                $returnFormat = $fieldMetadata['return_format'] ?? NULL;
-                $type = $fieldMetadata['type'] ?? NULL;
-                $sectionFields[$simpleKey]['value'] = $value;
-                $sectionFields[$simpleKey]['type'] = $type;
-                $sectionFields[$simpleKey]['returnFormat'] = $returnFormat;
+            if (FALSE === strpos($key, $unique_id)) unset($data[$key]);
+            if ('_' === $key[0]) unset($data[$key]);
+        }
+
+        /**
+        * Loop through the postmeta fields that include the specified $unique_id
+        * in the field key. This value corresponds to the ACF flexible field
+        * for the current section - field keys containing this string denote
+        * the fields associated with the current section.
+        */
+        foreach ($data as $key => $value) {
+            $simpleKey = str_replace($unique_id.'_', '', $key);
+            $value = maybe_unserialize($value[0]);
+            $fieldMetadata = $this->getFieldAttributes($key);
+            $returnFormat = $fieldMetadata['return_format'] ?? NULL;
+            $type = $fieldMetadata['type'] ?? NULL;
+
+            /**
+             * Attach subfield data to any repeater fields as a 'subfields' array.
+             */
+            if ('repeater' === $type) {
+
+                // Loop through all relevant postmeta fields again
+                foreach ($data as $k => $v) {
+
+                    /**
+                     * Only postmeta relating to repeater field contained by
+                     * current flex field - i.e. the subfield keys. We're looping
+                     * through postmeta fields and this is a repeater field - so
+                     * `$key` is the repeater field name.
+                     */
+                    if (FALSE === strpos($k, $key.'_')) continue;
+
+                    // Build subfield Metadata
+                    $subFieldMetadata = $this->getFieldAttributes($k);
+                    $subFieldReturnFormat = $subFieldMetadata['return_format'] ?? NULL;
+                    $subFieldType = $subFieldMetadata['type'] ?? NULL;
+                    $subFieldData = [
+                        'value' => maybe_unserialize($v)[0],
+                        'type' => $subFieldType,
+                        'returnFormat' => $subFieldReturnFormat,
+                    ];
+
+                    $k = str_replace($key . '_', '', $k);
+                    $subKeyArray = explode('_', $k);
+                    $index = $subKeyArray[0];
+                    $simpleSubKey = $subKeyArray[1];
+                    $sectionFields[$simpleKey]['subfields'][$index][$simpleSubKey] = $subFieldData;
+                }
             }
+
+            $sectionFields[$simpleKey]['value'] = $value;
+            $sectionFields[$simpleKey]['type'] = $type;
+            $sectionFields[$simpleKey]['returnFormat'] = $returnFormat;
         }
 
         $obj = new \stdClass;
