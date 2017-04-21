@@ -33,7 +33,7 @@ abstract class Data
     * @return array Filtered data content.
     */
     public function filterDataByType(array $data) {
-        $this->logger($data, false);
+        //$this->logger($data, false);
         $filteredData = [];
 
         foreach ($data as $key => $fieldAttributes) {

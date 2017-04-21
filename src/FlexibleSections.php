@@ -27,9 +27,9 @@ class FlexibleSections extends PostMetaData {
     public function flexibleContentData ()
     {
         /**
-        * An array of the selected flexible field names, in the correct display order.
-        * The key for each array item corresponds to the display index, the value being
-        * the field name. E.g: `[$index => $fieldName]`
+        * An array of the selected flexible field names, in the required display
+        * order. The key for each array item corresponds to the display index,
+        * the value being the field name. E.g: `[$index => $fieldName]`
         */
         $rows = get_post_meta( $this->postID, $this->flex_fieldname, true );
         if (!$rows) return;
@@ -67,6 +67,12 @@ class FlexibleSections extends PostMetaData {
         }
 
         /**
+         * Create a running manifest of fields that are repeater subfields, so
+         * that these can be unset later.
+         */
+        static $repeaterSubFields = [];
+
+        /**
         * Loop through the postmeta fields that include the specified $unique_id
         * in the field key. This value corresponds to the ACF flexible field
         * for the current section - field keys containing this string denote
@@ -95,6 +101,8 @@ class FlexibleSections extends PostMetaData {
                      */
                     if (FALSE === strpos($k, $key.'_')) continue;
 
+                    $repeaterSubFields[] = $k;
+
                     // Build subfield Metadata
                     $subFieldMetadata = $this->getFieldAttributes($k);
                     $subFieldReturnFormat = $subFieldMetadata['return_format'] ?? NULL;
@@ -118,14 +126,23 @@ class FlexibleSections extends PostMetaData {
             $sectionFields[$simpleKey]['returnFormat'] = $returnFormat;
         }
 
+        /**
+         * Unset the unecessary repeater fields because this data is now nested
+         * in the main $sectionFields array under the repeater field.
+         */
+        $sectionFieldsTrimmed = $sectionFields;
+        foreach ($repeaterSubFields as $unsetKey) {
+            unset($sectionFieldsTrimmed[str_replace($unique_id.'_', '', $unsetKey)]);
+        }
+
         $obj = new \stdClass;
         $obj->sectionName = $unique_id;
         $obj->sectionCssId = str_replace('_', '-', $unique_id);
         $obj->flexFieldType = $section;
         $obj->index = $index;
         $obj->cssClasses = $classes;
-        $obj->data = $sectionFields;
-        $obj->filteredData = $this->filterDataByType($sectionFields);
+        $obj->data = $sectionFieldsTrimmed;
+        $obj->filteredData = $this->filterDataByType($sectionFieldsTrimmed);
         return $obj;
     }
 
