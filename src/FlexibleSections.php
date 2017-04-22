@@ -8,14 +8,45 @@ namespace Carawebs\DataAccessor;
 class FlexibleSections extends PostMetaData {
 
     /**
+    * An array of the selected flexible field names, in the required display
+    * order. The key for each array item corresponds to the display index,
+    * the value being the field name. E.g: `[$index => $fieldName]`
+    * @var string $flexRows [description]
+    */
+    private $flexRows;
+
+    /**
+    * Post metadata for the flexible field.
+    * @var array $flex_fieldname [description]
+    */
+    private $flexFieldMetaData;
+
+    /**
     * Instantiate the object with fieldname and post ID.
-    *
-    * @param int       $post_ID The post ID
-    * @param string    $flex_fieldname The name of the flexible field
+    * @param int|string $postID The post ID
+    * @param string $flex_fieldname The name of the flexible field
     */
     public function __construct ($postID = NULL, $flex_fieldname = 'flex') {
         $this->flex_fieldname = $flex_fieldname;
         parent::__construct($postID);
+
+        // Set all flexible fields as a property.
+        $this->setFlexibleFieldData($postID);
+    }
+
+    private function setFlexibleFieldData($postID)
+    {
+        $this->flexRows = get_post_meta( $this->postID, $this->flex_fieldname, true );
+        // Get all metadata attached to the post.
+        $metaData = get_post_meta($this->postID, NULL, true);
+
+        // Only include fields relating to the specific flexible field
+        $flexFieldId = $this->flex_fieldname . '_';
+        foreach ($metaData as $key => $value) {
+            if (FALSE === strpos($key, $flexFieldId)) unset($metaData[$key]);
+            if ('_' === $key[0]) unset($metaData[$key]);
+        }
+        $this->flexFieldMetaData = $metaData;
     }
 
     /**
@@ -27,15 +58,23 @@ class FlexibleSections extends PostMetaData {
     public function flexibleContentData ()
     {
         /**
-        * An array of the selected flexible field names, in the required display
-        * order. The key for each array item corresponds to the display index,
-        * the value being the field name. E.g: `[$index => $fieldName]`
+        * Get all flexible field metadata attached to the post.
         */
-        $rows = get_post_meta( $this->postID, $this->flex_fieldname, true );
-        if (!$rows) return;
+        if (!$this->flexRows) return;
         $rowData = [];
-        foreach( (array)$rows as $index => $subfield) {
-            $rowData[] = $this->metaData($index, $subfield);
+        foreach( (array)$this->flexRows as $index => $flexSection) {
+            // All fields for this flexible section will contain this string
+            $sectionKey = $this->flex_fieldname . '_' . $index . '_' . $flexSection;
+            // Metadata array - for this section only
+            $sectionMetaData = [];
+            foreach ($this->flexFieldMetaData as $key => $value) {
+                // Data relating to this $flexSection only
+                if (FALSE === strpos($key, $sectionKey)) continue;
+                // Exclude ACF "hidden" custom fields
+                if ('_' === $key[0]) continue;
+                $sectionMetaData[$key] = $value;
+            }
+            $rowData[] = $this->processMetaData($index, $flexSection, $sectionMetaData);
         }
         return $rowData;
     }
@@ -44,61 +83,48 @@ class FlexibleSections extends PostMetaData {
     * Section metadata.
     *
     * @param  int|string $index The section index
-    * @param  string $section The section name
+    * @param  string $flexSection; The section name
     * @param  string $classname Unique classname
     * @return array Metadata for this section
     */
-    public function metaData($index, $section = NULL, $classname = NULL)
+    public function processMetaData($index, $flexSection = NULL, array $data)
     {
-        $classes = $this->cssClasses($index, $section);
-        $unique_id = $this->flex_fieldname . '_' . $index . '_' . $section;
-        $data = get_post_meta($this->postID, NULL, true);
+        $uniqueSectionId = $this->flex_fieldname . '_' . $index . '_' . $flexSection;
         $sectionFields = [];
 
         /**
-        * Filter metadata fields so that $data relates to flexible field data only.
-        * Unset the element if the current flex field string not included in
-        * the field key. Exclude fields having keys that are prefixed with "_".
-        * These represent ACF-generated fields that reference `acf-field` posts.
+        * Create a running manifest of fields that are repeater subfields, so
+        * that these can be unset later.
         */
-        foreach ($data as $key => $value) {
-            if (FALSE === strpos($key, $unique_id)) unset($data[$key]);
-            if ('_' === $key[0]) unset($data[$key]);
-        }
-
-        /**
-         * Create a running manifest of fields that are repeater subfields, so
-         * that these can be unset later.
-         */
         static $repeaterSubFields = [];
 
         /**
-        * Loop through the postmeta fields that include the specified $unique_id
+        * Loop through the postmeta fields that include the specified $uniqueSectionId
         * in the field key. This value corresponds to the ACF flexible field
         * for the current section - field keys containing this string denote
         * the fields associated with the current section.
         */
         foreach ($data as $key => $value) {
-            $simpleKey = str_replace($unique_id.'_', '', $key);
+            $simpleKey = str_replace($uniqueSectionId.'_', '', $key);
             $value = maybe_unserialize($value[0]);
             $fieldMetadata = $this->getFieldAttributes($key);
             $returnFormat = $fieldMetadata['return_format'] ?? NULL;
             $type = $fieldMetadata['type'] ?? NULL;
 
             /**
-             * Attach subfield data to any repeater fields as a 'subfields' array.
-             */
+            * Attach subfield data to any repeater fields as a 'subfields' array.
+            */
             if ('repeater' === $type) {
 
                 // Loop through all relevant postmeta fields again
                 foreach ($data as $k => $v) {
 
                     /**
-                     * Only postmeta relating to repeater field contained by
-                     * current flex field - i.e. the subfield keys. We're looping
-                     * through postmeta fields and this is a repeater field - so
-                     * `$key` is the repeater field name.
-                     */
+                    * Only postmeta relating to repeater field contained by
+                    * current flex field - i.e. the subfield keys. We're looping
+                    * through postmeta fields and this is a repeater field - so
+                    * `$key` is the repeater field name.
+                    */
                     if (FALSE === strpos($k, $key.'_')) continue;
 
                     $repeaterSubFields[] = $k;
@@ -127,20 +153,20 @@ class FlexibleSections extends PostMetaData {
         }
 
         /**
-         * Unset the unecessary repeater fields because this data is now nested
-         * in the main $sectionFields array under the repeater field.
-         */
+        * Unset the unecessary repeater fields because this data is now nested
+        * in the main $sectionFields array under the repeater field.
+        */
         $sectionFieldsTrimmed = $sectionFields;
         foreach ($repeaterSubFields as $unsetKey) {
-            unset($sectionFieldsTrimmed[str_replace($unique_id.'_', '', $unsetKey)]);
+            unset($sectionFieldsTrimmed[str_replace($uniqueSectionId.'_', '', $unsetKey)]);
         }
 
         $obj = new \stdClass;
-        $obj->sectionName = $unique_id;
-        $obj->sectionCssId = str_replace('_', '-', $unique_id);
-        $obj->flexFieldType = $section;
+        $obj->sectionName = $uniqueSectionId;
+        $obj->sectionCssId = str_replace('_', '-', $uniqueSectionId);
+        $obj->flexFieldType = $flexSection;;
         $obj->index = $index;
-        $obj->cssClasses = $classes;
+        $obj->cssClasses = $this->cssClasses($index, $flexSection);
         $obj->data = $sectionFieldsTrimmed;
         $obj->filteredData = $this->filterDataByType($sectionFieldsTrimmed);
         return $obj;
@@ -154,12 +180,12 @@ class FlexibleSections extends PostMetaData {
     */
     private function cssClasses($count, $prefix)
     {
-        $classes = ['flexible-field'];
-        $classname = $classname ?? 'flex-section';
-        $classes[] = $classname;
-        $classes[] = $classname . '-' . $count;
-        $classes[] = str_replace('_', '-', $prefix) . '-' . $count;
-        $classes[] = str_replace('_', '-', $prefix);
-        return $classes;
+        return [
+            'flexible-field',
+            'flex-section',
+            'flex-section-' . $count,
+            str_replace('_', '-', $prefix) . '-' . $count,
+            str_replace('_', '-', $prefix)
+        ];
     }
 }
