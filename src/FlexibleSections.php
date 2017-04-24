@@ -166,6 +166,12 @@ class FlexibleSections extends PostMetaData {
             unset($sectionFieldsTrimmed[str_replace($uniqueSectionId.'_', '', $unsetKey)]);
         }
 
+        $filteredData = $this->filterDataByType($sectionFieldsTrimmed);
+
+        $partial = !empty($filteredData['partial'])
+            ? $filteredData['partial']
+            : str_replace('_', '-', $flexSection);
+
         $obj = new \stdClass;
         $obj->sectionName = $uniqueSectionId;
         $obj->sectionCssId = str_replace('_', '-', $uniqueSectionId);
@@ -173,8 +179,8 @@ class FlexibleSections extends PostMetaData {
         $obj->index = $index;
         $obj->cssClasses = $this->cssClasses($index, $flexSection);
         $obj->data = $sectionFieldsTrimmed;
-        $obj->filteredData = $this->filterDataByType($sectionFieldsTrimmed);
-        $obj->partial = str_replace('_', '-', $flexSection);
+        $obj->filteredData = $filteredData;
+        $obj->partial = $partial;
         return $obj;
     }
 
