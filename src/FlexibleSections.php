@@ -129,7 +129,12 @@ class FlexibleSections extends PostMetaData {
                     * through postmeta fields and this is a repeater field - so
                     * `$key` is the repeater field name.
                     */
-                    if (FALSE === strpos($k, $key.'_')) continue;
+                    // if (FALSE === strpos($k, $key.'_')) continue;
+                    // if (0 === preg_match("/$key\_\d/", $k)) continue;
+                    if (0 === preg_match("/$key\_\d+\_/", $k)) continue;
+
+                    // var_dump(preg_match("/$key\_/", $k));
+                    //var_dump(strpos($k, $key.'_'));
 
                     $repeaterSubFields[] = $k;
 
