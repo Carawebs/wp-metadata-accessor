@@ -29,7 +29,7 @@ class PostMetaData extends Data
         $id = !empty($postID) ? $postID : $this->postID;
         $rawValue = get_post_meta($id, $fieldName, true);
         if (empty($rawValue)) return;
-        
+
         if ($filterType) {
             return $this->filter($rawValue, $filterType);
         } else {
@@ -105,7 +105,7 @@ class PostMetaData extends Data
      * @param string|int $postID The post ID for which to fetch post metadata.
      * @return Array Repeater field data
      */
-    public function getAcfRepeaterFieldData($fieldName, $subFields, $postID = NULL) : array
+    public function getAcfRepeaterFieldData($fieldName, $subFields, $postID = NULL)
     {
         $id = !empty($postID) ? $postID : $this->postID;
         $repeater = get_post_meta($id, $fieldName, true); // Number of subfields
