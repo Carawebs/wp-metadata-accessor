@@ -28,6 +28,8 @@ class PostMetaData extends Data
     {
         $id = !empty($postID) ? $postID : $this->postID;
         $rawValue = get_post_meta($id, $fieldName, true);
+        if (empty($rawValue)) return;
+        
         if ($filterType) {
             return $this->filter($rawValue, $filterType);
         } else {
