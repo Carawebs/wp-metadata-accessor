@@ -219,6 +219,9 @@ abstract class Data
     private function postObject($id)
     {
         $obj = get_post($id);
+        if (!is_object($obj)) {
+            return;
+        }
         $obj->featuredImage = has_post_thumbnail($id)
         ? wp_prepare_attachment_for_js(get_post_thumbnail_id($id))
         : NULL;
