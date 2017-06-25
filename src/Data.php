@@ -219,7 +219,9 @@ abstract class Data
     private function postObject($id)
     {
         $obj = get_post($id);
-        $obj->featuredImage = wp_prepare_attachment_for_js(get_post_thumbnail_id($id));
+        $obj->featuredImage = has_post_thumbnail($id)
+        ? wp_prepare_attachment_for_js(get_post_thumbnail_id($id))
+        : NULL;
         $obj->permalink = get_permalink($id);
         return apply_filters('carawebs/wp-metadata-accessor/post-object', $obj, $id);
     }
