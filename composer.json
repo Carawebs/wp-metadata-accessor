@@ -2,7 +2,7 @@
     "name": "carawebs/wp-metadata-accessor",
     "description": "This package helps fetch data from the WordPress postmeta table.",
     "type": "library",
-    "license": "GNU",
+    "license": "GPL-3.0-only",
     "authors": [
         {
             "name": "David Egan",
